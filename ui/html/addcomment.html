@@ -1,0 +1,79 @@
+<html lang="en" op="reply">
+
+<head>
+	<meta name="referrer" content="origin">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/static/css/news.css">
+	<title>Add Comment | Hacker News</title>
+</head>
+
+<body>
+	<center>
+		<table id="hnmain" border="0" cellpadding="0" cellspacing="0" width="85%" bgcolor="#f6f6ef">
+			<tr>
+				<td bgcolor="#ff6600">
+					<table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+						<tr>
+							<td style="width:18px;padding-right:4px"><a href="/"><img src="/static/y18.gif" width="18" height="18"
+										style="border:1px white solid;"></a>
+							</td>
+							<td style="line-height:12pt; height:10px;"><span class="pagetop"><b>Add Comment</b></span></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr id="pagespace" title="Add Comment" style="height:10px"></tr>
+			<tr>
+				{{ with .Comment }}
+				<td>
+					<table class="fatitem" border="0">
+						<tr class='athing' id='{{ .ID }}'>
+							<td class='ind'></td>
+							<td valign="top" class="votelinks">
+								<center><a id='up_{{ .ID }}' onclick='return vote(event, this, "up")'
+										href='vote?id=28361157&amp;how=up&amp;auth=3f191818e0cea0309e1e107abc91083cb0d24f9e&amp;goto=reply%3Fgoto%3Ditem%253Fid%253D28360987%252328361157%26id%3D28361157#28361157'>
+										<div class='votearrow' title='upvote'>
+										</div>
+									</a></center>
+							</td>
+							<td class="default">
+								<div style="margin-top:2px; margin-bottom:-10px;"><span class="comhead">
+										<a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a> <span class="age"
+											title="2021-08-30T21:37:30"><a href="/item/{{ .ID }}">
+												{{ timeSince .CreatedAt }} ago</a></span>
+										<span id="unv_{{ .ID }}"></span><span class="par"> | <a href="/item/{{ .PostID }}">parent</a></span>
+										<a class="togg" n="21" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
+										<span class='storyon'> | on: <a href="/item/{{ .PostID }}">NYC
+												major crime complaints
+												fell when cops took a
+												b...</a></span>
+									</span></div><br>
+								<div class="comment">
+									<span class="commtext c00">&gt; {{ .Text }}
+									</span>
+									<div class='reply'></div>
+								</div>
+							</td>
+						</tr>
+						<tr style="height:10px"></tr>
+						<tr>
+							<td colspan="2"></td>
+							<td>
+								<form method="post" action="/comment"><input type="hidden" name="parent" value="{{ .ID }}"><input
+										type="hidden" name="goto" value="{{ replyLink .PostID .ID}}"><input type="hidden" name="hmac"
+										value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6" cols="60"
+										autofocus="true"></textarea>
+									<br><br><input type="submit" value="reply">
+								</form>
+							</td>
+						</tr>
+					</table>
+				</td>
+				{{ end }}
+			</tr>
+		</table>
+	</center>
+</body>
+<script type='text/javascript' src='/static/js/hn.js'></script>
+
+</html>
