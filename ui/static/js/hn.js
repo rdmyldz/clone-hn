@@ -148,7 +148,7 @@ function commstate(tr) {
   vis(byClass(tr, "votelinks")[0], !coll);
   setshow(byClass(tr, "comment")[0], !coll);
   var el = byClass(tr, "togg")[0];
-  el.innerHTML = coll ? "[" + el.getAttribute("n") + " more]" : "[â€“]";
+  el.innerHTML = coll ? "[" + el.getAttribute("n") + " more]" : "[-“]";
   coll ? aeach(noshow, kids(tr, true)) : aeach(commstate, kids(tr));
 }
 

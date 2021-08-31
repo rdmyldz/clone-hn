@@ -28,6 +28,7 @@ func NewDB(dbFile string) (*SqliteHN, error) {
 			"domain" TEXT NOT NULL,
 			"owner" TEXT NOT NULL,
 			"points" INTEGER NOT NULL,
+			"parent_id" INTEGER NOT NULL,
 			"created_at" DATETIME NOT NULL
 			);
 

@@ -7,13 +7,13 @@ import (
 )
 
 func (s *SqliteHN) CreatePost(p *models.Post) (int, error) {
-	stmt, err := s.db.Prepare("INSERT INTO posts (link, title, domain, owner, points, created_at) values(?, ?, ?, ?, ?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO posts (link, title, domain, owner, points, parent_id, created_at) values(?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return -1, err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(p.Link, p.Title, p.Domain, p.Owner, p.Points, time.Now())
+	res, err := stmt.Exec(p.Link, p.Title, p.Domain, p.Owner, p.Points, p.ParentID, time.Now())
 	if err != nil {
 		return -1, err
 	}
@@ -33,7 +33,7 @@ func (s *SqliteHN) GetPosts(query string) ([]models.Post, error) {
 	var ret []models.Post
 	for rows.Next() {
 		var p models.Post
-		err := rows.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.CreatedAt)
+		err := rows.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID, &p.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func (s *SqliteHN) GetPosts(query string) ([]models.Post, error) {
 func (s *SqliteHN) GetPost(query, id string) (*models.Post, error) {
 	row := s.db.QueryRow(query, id)
 	var p models.Post
-	err := row.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.CreatedAt)
+	err := row.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID, &p.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

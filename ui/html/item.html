@@ -61,10 +61,16 @@
                     </a>
                   </center>
                 </td>
+                {{ if .Post.Link }}
                 <td class="title">
                   <a href="{{ .Post.Link }}" class="storylink"> {{ .Post.Title }} </a><span class="sitebit comhead">
                     (<a href="/from/{{ .Post.Domain }}"><span class="sitestr">{{ .Post.Domain }}</span></a>)</span>
                 </td>
+                {{ else }}
+                <td class="title">
+                  <a href="/item/{{ .Post.ID }}" class="storylink"> {{ .Post.Title }} </a>
+                </td>
+                {{ end }}
               </tr>
               <tr>
                 <td colspan="2"></td>
@@ -99,46 +105,52 @@
             </tbody>
           </table>
           <br /><br />
-          <br /><br />
-          {{ with .Comments }}
+          {{ with .Posts }}
           <table class="comment-tree" border="0">
             <tbody>
               {{ range . }}
-              <tr class="athing comtr">
-                <td class="ind">
-                  <img src="/static/s.gif" width="0" height="1" />
-                </td>
-                <td class="votelinks" valign="top">
-                  <center>
-                    <a id="up_{{ .ID }}" href="/vote/{{ .ID }}&amp;how=up&amp;goto=item%3Fid%3D27903787">
-                      <div class="votearrow" title="upvote"></div>
-                    </a>
-                  </center>
-                </td>
-                <td class="default">
-                  <div style="margin-top: 2px; margin-bottom: -10px">
-                    <span class="comhead">
-                      <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
-                      <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">{{ timeSince .CreatedAt
-                          }} ago</a></span>
-                      <span id="unv_{{ .ID }}"></span><span class="par"></span>
-                      <a class="togg" n="25" href="javascript:void(0)" onclick="return toggle(event, 27905026)">[–]</a>
-                      <span class="storyon"></span>
-                    </span>
-                  </div>
-                  <br />
-                  <div class="comment">
-                    <span class="commtext c00">
-                      {{ .Text }}
-                      <div class="reply">
-                        <p>
-                          <font size="1">
-                            <u><a href="/reply/{{ .ID }}?goto={{ replyLink .PostID .ID }}">reply</a></u>
-                          </font>
-                        </p>
-                      </div>
-                    </span>
-                  </div>
+              <tr id="{{ .ID }}" class="athing comtr">
+                <td>
+                  <table border="0">
+                    <tr>
+                      <td class="ind">
+                        <img src="/static/s.gif" width="0" height="1" />
+                      </td>
+                      <td class="votelinks" valign="top">
+                        <center>
+                          <a id="up_{{ .ID }}" href="/vote/{{ .ID }}&amp;how=up&amp;goto=item%3Fid%3D27903787">
+                            <div class="votearrow" title="upvote"></div>
+                          </a>
+                        </center>
+                      </td>
+                      <td class="default">
+                        <div style="margin-top: 2px; margin-bottom: -10px">
+                          <span class="comhead">
+                            <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
+                            <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">{{ timeSince
+                                .CreatedAt
+                                }} ago</a></span>
+                            <span id="unv_{{ .ID }}"></span><span class="par"></span>
+                            <a class="togg" n="25" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
+                            <span class="storyon"></span>
+                          </span>
+                        </div>
+                        <br />
+                        <div class="comment">
+                          <span class="commtext c00">
+                            {{ .Title }}
+                            <div class="reply">
+                              <p>
+                                <font size="1">
+                                  <u><a href="/reply/{{ .ID }}?goto={{ replyLink .ParentID .ID }}">reply</a></u>
+                                </font>
+                              </p>
+                            </div>
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               {{ end }}

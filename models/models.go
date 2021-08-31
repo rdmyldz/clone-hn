@@ -10,6 +10,7 @@ type Post struct {
 	CreatedAt time.Time
 	Owner     string
 	Points    int
+	ParentID  int
 }
 
 type Comment struct {

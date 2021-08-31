@@ -21,7 +21,7 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	query := "SELECT post_id, link, title, domain, owner, points, created_at FROM posts"
+	query := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE parent_id = 0"
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleHome, error while getting posts. err: %v\n", err)
@@ -46,7 +46,7 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT post_id, link, title, domain, owner, points, created_at FROM posts ORDER BY created_at DESC"
+	query := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts Where parent_id = 0 ORDER BY created_at DESC"
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
@@ -73,7 +73,7 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("id: %v\n", id)
-	queryPost := "SELECT post_id, link, title, domain, owner, points, created_at FROM posts WHERE post_id = ?"
+	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE post_id = ?"
 	p, err := app.db.GetPost(queryPost, id)
 	if err != nil {
 		log.Printf("in handleItem, error while getting post. err: %v\n", err)
@@ -81,8 +81,10 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryComment := "SELECT comment_id, text, created_at, owner, parent_id, post_id FROM comments WHERE post_id = ?"
-	c, err := app.db.GetComments(queryComment, p.ID)
+	// queryComment := "SELECT post_id, link, domain, owner, points, parent_id, created_at FROM posts WHERE parent_id = ?"
+	// SELECT * FROM posts WHERE parent_id = 1 OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = 1);
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts where parent_id = "%d" OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = "%d")`, p.ID, p.ID)
+	comments, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleItem, error while getting comments. err: %v\n", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -91,7 +93,7 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 
 	data := &TmplData{
 		Post:     p,
-		Comments: c,
+		Posts:    comments,
 		Username: uname,
 	}
 
@@ -257,9 +259,9 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c models.Comment
+	var p models.Post
 	redirectTo := r.FormValue("goto")
-	c.Text = r.FormValue("text")
+	p.Title = r.FormValue("text")
 	parent := r.FormValue("parent")
 	pid, err := strconv.Atoi(parent)
 	if err != nil {
@@ -267,14 +269,14 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	c.PostID = pid
-	c.Owner = username
+	p.ParentID = pid
+	p.Owner = username
 	log.Printf("form values: %#v\n", r.Form)
-	log.Printf("comment: %#v\n", c)
+	log.Printf("comment: %#v\n", p)
 
-	id, err := app.db.CreateComment(&c)
+	id, err := app.db.CreatePost(&p)
 	if err != nil {
-		log.Printf("in handleComment, error while inserting comment: %#v - %v\n", c, err)
+		log.Printf("in handleComment, error while inserting comment: %#v - %v\n", p, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -311,16 +313,17 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 
 	id := vars["id"]
 	log.Printf("id: %v\n", id)
-	queryComment := "SELECT comment_id, text, created_at, owner, parent_id, post_id FROM comments WHERE comment_id = ?"
-	c, err := app.db.GetComment(queryComment, id)
+	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE post_id = ?"
+	p, err := app.db.GetPost(queryPost, id)
 	if err != nil {
 		log.Printf("in handleReply, error while getting comment: %v\n", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("comment: %#v\n", c)
+
+	log.Printf("comment: %#v\n", p)
 	data := &TmplData{
-		Comment: c,
+		Post: p,
 	}
 
 	app.tmpl.ExecuteTemplate(w, "addcomment.html", data)

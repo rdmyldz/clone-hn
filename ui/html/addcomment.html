@@ -24,7 +24,7 @@
 			</tr>
 			<tr id="pagespace" title="Add Comment" style="height:10px"></tr>
 			<tr>
-				{{ with .Comment }}
+				{{ with .Post }}
 				<td>
 					<table class="fatitem" border="0">
 						<tr class='athing' id='{{ .ID }}'>
@@ -41,15 +41,16 @@
 										<a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a> <span class="age"
 											title="2021-08-30T21:37:30"><a href="/item/{{ .ID }}">
 												{{ timeSince .CreatedAt }} ago</a></span>
-										<span id="unv_{{ .ID }}"></span><span class="par"> | <a href="/item/{{ .PostID }}">parent</a></span>
+										<span id="unv_{{ .ID }}"></span><span class="par"> | <a
+												href="/item/{{ .ParentID }}">parent</a></span>
 										<a class="togg" n="21" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
-										<span class='storyon'> | on: <a href="/item/{{ .PostID }}">NYC
+										<span class='storyon'> | on: <a href="/item/{{ .ParentID }}">NYC
 												major crime complaints
 												fell when cops took a
 												b...</a></span>
 									</span></div><br>
 								<div class="comment">
-									<span class="commtext c00">&gt; {{ .Text }}
+									<span class="commtext c00">&gt; {{ .Title }}
 									</span>
 									<div class='reply'></div>
 								</div>
@@ -60,7 +61,7 @@
 							<td colspan="2"></td>
 							<td>
 								<form method="post" action="/comment"><input type="hidden" name="parent" value="{{ .ID }}"><input
-										type="hidden" name="goto" value="{{ replyLink .PostID .ID}}"><input type="hidden" name="hmac"
+										type="hidden" name="goto" value="{{ replyLink .ParentID .ID}}"><input type="hidden" name="hmac"
 										value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6" cols="60"
 										autofocus="true"></textarea>
 									<br><br><input type="submit" value="reply">
