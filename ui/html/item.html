@@ -106,16 +106,18 @@
             </tbody>
           </table>
           <br /><br />
+          {{ $indentMap := .Indentation}}
           {{ with .Posts }}
           <table class="comment-tree" border="0">
             <tbody>
               {{ range . }}
+              {{ $newID := .ID }}
               <tr id="{{ .ID }}" class="athing comtr">
                 <td>
                   <table border="0">
                     <tr>
                       <td class="ind">
-                        <img src="/static/s.gif" width="0" height="1" />
+                        <img src="/static/s.gif" width="{{ index $indentMap $newID }}" height="1" />
                       </td>
                       <td class="votelinks" valign="top">
                         <center>
@@ -128,9 +130,8 @@
                         <div style="margin-top: 2px; margin-bottom: -10px">
                           <span class="comhead">
                             <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
-                            <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">{{ timeSince
-                                .CreatedAt
-                                }} ago</a></span>
+                            <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">
+                                {{ timeSince .CreatedAt }} ago</a></span>
                             <span id="unv_{{ .ID }}"></span><span class="par"></span>
                             <a class="togg" n="25" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
                             <span class="storyon"></span>

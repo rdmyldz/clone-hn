@@ -83,7 +83,22 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 
 	// queryComment := "SELECT post_id, link, domain, owner, points, parent_id, created_at FROM posts WHERE parent_id = ?"
 	// SELECT * FROM posts WHERE parent_id = 1 OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = 1);
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts where parent_id = "%d" OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = "%d")`, p.ID, p.ID)
+	// query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts where parent_id = "%d" OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = "%d")`, p.ID, p.ID)
+	query := fmt.Sprintf(`
+	WITH RECURSIVE temp_posts (post_id, link, title, domain, owner, points, parent_id, created_at) AS (
+    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.created_at
+    FROM posts AS p
+    WHERE p.parent_id = %d
+
+    UNION ALL
+
+    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.created_at
+    FROM posts AS p
+    JOIN temp_posts tp ON tp.post_id = p.parent_id ORDER BY p.parent_id DESC, p.created_at DESC
+)
+
+SELECT * FROM temp_posts;
+	`, p.ID)
 	comments, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleItem, error while getting comments. err: %v\n", err)
@@ -91,13 +106,34 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	indentations := getDepth(comments, p.ID)
+
 	data := &TmplData{
-		Post:     p,
-		Posts:    comments,
-		Username: uname,
+		Post:        p,
+		Posts:       comments,
+		Username:    uname,
+		Indentation: indentations,
 	}
 
-	app.tmpl.ExecuteTemplate(w, "item.html", data)
+	err = app.tmpl.ExecuteTemplate(w, "item.html", data)
+	if err != nil {
+		log.Printf("error while executing item.html: %v\n", err)
+	}
+}
+
+func getDepth(data []models.Post, pid int) map[int]int {
+	depth := make(map[int]int)
+	findDepth(data, pid, 0, depth)
+	return depth
+}
+
+func findDepth(data []models.Post, pid int, depth int, indMap map[int]int) {
+	for i, d := range data {
+		if d.ParentID == pid {
+			indMap[d.ID] = depth * 40
+			findDepth(data[i+1:], d.ID, depth+1, indMap)
+		}
+	}
 }
 
 func (app *application) handleSubmit(w http.ResponseWriter, r *http.Request) {
