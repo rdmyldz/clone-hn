@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/static/css/news.css">
   <link rel="shortcut icon" href="/static/favicon.ico">
-  <title>Comments</title>
+  <title>{{ .Post.Title }}</title>
 </head>
 
 <body>
@@ -87,7 +87,7 @@
                     class="hnpast">past</a>
                   |
                   <a href="fave?id=27903787&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
-                  | <a href="/item/{{ .Post.ID }}">{{ .Post.CommentNum }}&nbsp;comments</a>
+                  | <a href="/item/{{ .Post.ID }}">{{ len .Posts }}&nbsp;comments</a>
                 </td>
               </tr>
               <tr style="height: 10px"></tr>

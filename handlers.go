@@ -163,22 +163,16 @@ func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
 	}
 	post.Domain = getDomain(post.Link)
 	post.CreatedAt = time.Now()
-	if err != nil {
-		log.Printf("in handleR, error while parsing time: %v\n", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
 	post.Owner = username
-	log.Printf("owner is: %v\n", post.Owner)
 
-	id, err := app.db.CreatePost(&post)
+	_, err = app.db.CreatePost(&post)
 	if err != nil {
 		log.Printf("in handleR, error while creating post. err: %v\n", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("post created. id: %v\n", id)
+	log.Printf("in handleR, post created. id: %#v\n", post)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -317,7 +311,7 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 	log.Printf("form values: %#v\n", r.Form)
 	log.Printf("comment: %#v\n", p)
 
-	id, err := app.db.CreatePost(&p)
+	_, err = app.db.CreatePost(&p)
 	if err != nil {
 		log.Printf("in handleComment, error while inserting comment: %#v - %v\n", p, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -331,7 +325,7 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("comment successfully inserted with the id: %d\n", id)
+	log.Printf("after update - comment: %#v\n", p)
 	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
 }
 
@@ -380,7 +374,7 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-
+	// TODO: add main_post_id's title &TmplData in order to pass to addcomment.html
 	log.Printf("comment: %#v\n", p)
 	data := &TmplData{
 		Post: p,

@@ -7,8 +7,7 @@ import (
 )
 
 func (s *SqliteHN) CreatePost(p *models.Post) (int, error) {
-	stmt, err := s.db.Prepare(`INSERT INTO posts (link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at) 
-					values(?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	stmt, err := s.db.Prepare(`INSERT INTO posts (link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return -1, err
 	}
