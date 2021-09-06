@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	query := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE parent_id = 0"
+	query := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at FROM posts WHERE parent_id = 0"
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleHome, error while getting posts. err: %v\n", err)
@@ -46,7 +47,7 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts Where parent_id = 0 ORDER BY created_at DESC"
+	query := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at FROM posts Where parent_id = 0 ORDER BY created_at DESC"
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
@@ -73,7 +74,7 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("id: %v\n", id)
-	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE post_id = ?"
+	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at FROM posts WHERE post_id = ?"
 	p, err := app.db.GetPost(queryPost, id)
 	if err != nil {
 		log.Printf("in handleItem, error while getting post. err: %v\n", err)
@@ -85,14 +86,14 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 	// SELECT * FROM posts WHERE parent_id = 1 OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = 1);
 	// query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts where parent_id = "%d" OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = "%d")`, p.ID, p.ID)
 	query := fmt.Sprintf(`
-	WITH RECURSIVE temp_posts (post_id, link, title, domain, owner, points, parent_id, created_at) AS (
-    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.created_at
+	WITH RECURSIVE temp_posts (post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at) AS (
+    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.main_post_id, p.comment_num, p.created_at
     FROM posts AS p
     WHERE p.parent_id = %d
 
     UNION ALL
 
-    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.created_at
+    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.main_post_id, p.comment_num, p.created_at
     FROM posts AS p
     JOIN temp_posts tp ON tp.post_id = p.parent_id ORDER BY p.parent_id DESC, p.created_at DESC
 )
@@ -306,6 +307,12 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.ParentID = pid
+	p.MainPostID, err = getMainPostID(redirectTo)
+	if err != nil {
+		log.Printf("in handleComment, error while getting main_post_id: %s - %v\n", redirectTo, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	p.Owner = username
 	log.Printf("form values: %#v\n", r.Form)
 	log.Printf("comment: %#v\n", p)
@@ -316,8 +323,25 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	err = app.db.UpdateCommentNum(p.MainPostID)
+	if err != nil {
+		log.Printf("in handleComment, error while updating comment_num: %#v - %v\n", p, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	log.Printf("comment successfully inserted with the id: %d\n", id)
 	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+}
+
+func getMainPostID(p string) (int, error) {
+	pp := strings.Split(p, "/")[2]
+	mpi, err := strconv.Atoi(strings.Split(pp, "#")[0])
+	if err != nil {
+		return mpi, err
+	}
+	return mpi, nil
 }
 
 func (app *application) handleUser(w http.ResponseWriter, r *http.Request) {
@@ -349,7 +373,7 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 
 	id := vars["id"]
 	log.Printf("id: %v\n", id)
-	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts WHERE post_id = ?"
+	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, created_at FROM posts WHERE post_id = ?"
 	p, err := app.db.GetPost(queryPost, id)
 	if err != nil {
 		log.Printf("in handleReply, error while getting comment: %v\n", err)
@@ -363,6 +387,31 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.tmpl.ExecuteTemplate(w, "addcomment.html", data)
+}
+
+func (app *application) handleVote(w http.ResponseWriter, r *http.Request) {
+	// redirectTo := r.FormValue("goto")
+	// log.Printf("redrectTo: %q\n", redirectTo)
+	vars := mux.Vars(r)
+	log.Printf("vars: %v\n", vars)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		log.Printf("in handleVote, error while converting id: %v\n", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("id: %v\n", id)
+	redirectTo := r.FormValue("goto")
+	err = app.db.UpdatePoints(id)
+	if err != nil {
+		log.Printf("in handleVote, error while updating points: %v\n", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+
 }
 
 func getDomain(link string) string {

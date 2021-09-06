@@ -3,14 +3,16 @@ package models
 import "time"
 
 type Post struct {
-	ID        int
-	Link      string
-	Title     string
-	Domain    string
-	CreatedAt time.Time
-	Owner     string
-	Points    int
-	ParentID  int
+	ID         int
+	Link       string
+	Title      string
+	Domain     string
+	CreatedAt  time.Time
+	Owner      string
+	Points     int
+	ParentID   int
+	MainPostID int
+	CommentNum int
 }
 
 type Comment struct {

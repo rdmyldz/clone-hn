@@ -57,7 +57,7 @@
                 </td>
                 <td class="votelinks" valign="top">
                   <center>
-                    <a id="up_27903787" href="vote?id=27903787&amp;how=up&amp;goto=item%3Fid%3D27903787">
+                    <a id="up_{{ .Post.ID }}" href="/vote/{{ .Post.ID }}?how=up&amp;goto=/item/{{ .Post.ID }}">
                       <div class="votearrow" title="upvote"></div>
                     </a>
                   </center>
@@ -87,7 +87,7 @@
                     class="hnpast">past</a>
                   |
                   <a href="fave?id=27903787&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
-                  | <a href="/item/{{ .Post.ID }}">42&nbsp;comments</a>
+                  | <a href="/item/{{ .Post.ID }}">{{ .Post.CommentNum }}&nbsp;comments</a>
                 </td>
               </tr>
               <tr style="height: 10px"></tr>
@@ -121,7 +121,7 @@
                       </td>
                       <td class="votelinks" valign="top">
                         <center>
-                          <a id="up_{{ .ID }}" href="/vote/{{ .ID }}&amp;how=up&amp;goto=item%3Fid%3D27903787">
+                          <a id="up_{{ .ID }}" href="/vote/{{ .ID }}?how=up&amp;goto={{ replyLink .ParentID .ID }}">
                             <div class="votearrow" title="upvote"></div>
                           </a>
                         </center>

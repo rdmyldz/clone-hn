@@ -58,7 +58,7 @@
 									</td>
 									<td class="votelinks" valign="top">
 										<center>
-											<a id="up_{{ $p.ID}}" href="vote?id=27903787&amp;how=up&amp;goto=news">
+											<a id="up_{{ $p.ID}}" href="/vote/{{ $p.ID }}?how=up&amp;goto=/news">
 												<div class="votearrow" title="upvote"></div>
 											</a>
 										</center>
@@ -83,7 +83,7 @@
 												{{ timeSince $p.CreatedAt }} ago</a></span>
 										<span id="unv_{{ $p.ID }}"></span> |
 										<a href="hide?id=27903787&amp;goto=news">hide</a> |
-										<a href="/item/{{ $p.ID }}">9&nbsp;comments</a>
+										<a href="/item/{{ $p.ID }}">{{ $p.CommentNum }}&nbsp;comments</a>
 									</td>
 								</tr>
 								<tr class="spacer" style="height: 5px"></tr>
