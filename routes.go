@@ -21,7 +21,7 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/comment", authenticationMiddleware(app.handleComment)).Methods("POST")
 	router.HandleFunc("/user/{username}", app.handleUser).Methods("GET")
 	router.HandleFunc("/reply/{id}", authenticationMiddleware(app.handleReply)).Methods("GET")
-	router.HandleFunc("/vote/{id}", authenticationMiddleware(app.handleVote)).Methods("POST")
+	router.HandleFunc("/vote/{id}", authenticationMiddleware(app.handleVote)).Methods("GET")
 	router.HandleFunc("/newcomments", app.handleNewComments).Methods("GET")
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))
 
