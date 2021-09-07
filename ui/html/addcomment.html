@@ -45,7 +45,7 @@
 										<span id="unv_{{ .ID }}"></span><span class="par"> | <a
 												href="/item/{{ .ParentID }}">parent</a></span>
 										<a class="togg" n="21" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
-										<span class='storyon'> | on: <a href="/item/{{ .ParentID }}">{{ .Title }}...</a></span>
+										<span class='storyon'> | on: <a href="/item/{{ .ParentID }}">{{ .TitleSummary }}...</a></span>
 									</span></div><br>
 								<div class="comment">
 									<span class="commtext c00">&gt; {{ .Title }}
@@ -72,7 +72,7 @@
 			</tr>
 		</table>
 	</center>
+	<script type='text/javascript' src='/static/js/hn.js'></script>
 </body>
-<script type='text/javascript' src='/static/js/hn.js'></script>
 
 </html>

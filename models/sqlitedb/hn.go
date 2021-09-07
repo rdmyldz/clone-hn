@@ -31,6 +31,7 @@ func NewDB(dbFile string) (*SqliteHN, error) {
 			"parent_id" INTEGER NOT NULL,
 			"main_post_id" INTEGER NOT NULL,
 			"comment_num" INTEGER NOT NULL,
+			"title_summary" TEXT NOT NULL,
 			"created_at" DATETIME NOT NULL
 			);
 

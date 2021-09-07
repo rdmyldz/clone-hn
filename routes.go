@@ -20,8 +20,9 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/logout", app.handleLogout).Methods("GET")
 	router.HandleFunc("/comment", authenticationMiddleware(app.handleComment)).Methods("POST")
 	router.HandleFunc("/user/{username}", app.handleUser).Methods("GET")
-	router.HandleFunc("/reply/{id}", authenticationMiddleware(app.handleReply))
-	router.HandleFunc("/vote/{id}", authenticationMiddleware(app.handleVote))
+	router.HandleFunc("/reply/{id}", authenticationMiddleware(app.handleReply)).Methods("GET")
+	router.HandleFunc("/vote/{id}", authenticationMiddleware(app.handleVote)).Methods("POST")
+	router.HandleFunc("/newcomments", app.handleNewComments).Methods("GET")
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))
 
 	return router
