@@ -136,7 +136,7 @@ function toggle(ev, id) {
   (on ? addClass : remClass)(tr, "coll");
   commstate(tr);
   if ($("logout")) {
-    new Image().src = "collapse?id=" + id + (on ? "" : "&un=true");
+    new Image().src = "/collapse?id=" + id + (on ? "" : "&un=true");
   }
   ev.stopPropagation();
   return false;
@@ -148,7 +148,7 @@ function commstate(tr) {
   vis(byClass(tr, "votelinks")[0], !coll);
   setshow(byClass(tr, "comment")[0], !coll);
   var el = byClass(tr, "togg")[0];
-  el.innerHTML = coll ? "[" + el.getAttribute("n") + " more]" : "[-“]";
+  el.innerHTML = coll ? "[ more ]" : "[-]";
   coll ? aeach(noshow, kids(tr, true)) : aeach(commstate, kids(tr));
 }
 
