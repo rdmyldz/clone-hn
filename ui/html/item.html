@@ -11,239 +11,181 @@
 </head>
 
 <body>
-  <table id="hnmain" width="85%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f6f6ef">
-    <tbody>
-      <tr>
-        <td bgcolor="#ff6600">
-          <table style="padding: 2px" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tbody>
-              <tr>
-                <td style="width: 18px; padding-right: 4px">
-                  <a href="/"><img src="/static/y18.gif" style="border: 1px white solid" width="18" height="18" /></a>
-                </td>
-                <td style="line-height: 12pt; height: 10px">
-                  <span class="pagetop"><b class="hnname">
-                      <a href="/news">Hacker News</a></b>
-                    <a href="/newest">new</a> | <a href="/front">past</a> |
-                    <a href="/newcomments">comments</a> |
-                    <a href="/ask">ask</a> | <a href="/show">show</a> |
-                    <a href="/jobs">jobs</a> | <a href="/submit">submit</a>
-                  </span>
-                </td>
-                <td style="text-align: right; padding-right: 4px">
-                  <span class="pagetop">
-                    {{ if .Username }}
-                    <a id="me" href="/user/{{ .Username }}">{{ .Username }} </a> (1) |
-                    <a id="logout" href="/logout">logout</a>
-                    {{ else }}
-                    <a href="/login?goto=news">login</a>
-                    {{ end }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-      {{ with . }}
-      <tr id="pagespace" title="{{ .Post.Title }}" style="height: 10px"></tr>
-      <tr>
-        <td>
-          <table class="fatitem" border="0">
-            {{ if eq .Post.ParentID 0}}
-            <tbody>
-              <tr class="athing" id="{{ .Post.ID }}">
-                <td class="title" valign="top" align="right">
-                  <span class="rank"></span>
-                </td>
-                <td class="votelinks" valign="top">
-                  <center>
-                    <a id="up_{{ .Post.ID }}" href="/vote/{{ .Post.ID }}?how=up&amp;goto=/item/{{ .Post.ID }}">
-                      <div class="votearrow" title="upvote"></div>
-                    </a>
-                  </center>
-                </td>
-                {{ if .Post.Link }}
-                <td class="title">
-                  <a href="{{ .Post.Link }}" class="storylink"> {{ .Post.Title }} </a><span class="sitebit comhead">
-                    (<a href="/from/{{ .Post.Domain }}"><span class="sitestr">{{ .Post.Domain }}</span></a>)</span>
-                </td>
-                {{ else }}
-                <td class="title">
-                  <a href="/item/{{ .Post.ID }}" class="storylink"> {{ .Post.Title }} </a>
-                </td>
-                {{ end }}
-              </tr>
-              <tr>
-                <td colspan="2"></td>
-                <td class="subtext">
-                  <span class="score" id="score_27903787">{{ .Post.Points }} points</span> by
-                  <a href="/user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
-                  <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
-                      {{ timeSince .Post.CreatedAt }} ago</a></span>
-                  <span id="unv_{{ .Post.ID }}"></span> |
-                  <a href="hide?id=27903787&amp;goto=item%3Fid%3D27903787">hide</a>
-                  |
-                  <a href="https://hn.algolia.com/?query=Fat%20Fritz%20is%20not%20the%20Only%20Ripoff%20and%20now%20ChessBase%20is%20Getting%20Sued&amp;type=story&amp;dateRange=all&amp;sort=byDate&amp;storyText=false&amp;prefix&amp;page=0"
-                    class="hnpast">past</a>
-                  |
-                  <a href="fave?id=27903787&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
-                  | <a href="/item/{{ .Post.ID }}">{{ len .Posts }}&nbsp;comments</a>
-                </td>
-              </tr>
-              <tr style="height: 10px"></tr>
-              <tr>
-                <td colspan="2"></td>
-                <td>
-                  <form method="post" action="/comment">
-                    <input type="hidden" name="parent" value="{{ .Post.ID }}" /><input type="hidden" name="goto"
-                      value="/item/{{ .Post.ID }}" /><input type="hidden" name="hmac"
-                      value="d757c57e5f6caee959f03a08715ea0f508cee431" /><textarea name="text" rows="6"
-                      cols="60"></textarea>
-                    <br /><br /><input type="submit" value="add comment" />
-                  </form>
-                </td>
-              </tr>
-            </tbody>
-            {{ else }}
-            <tbody>
-              <tr class="athing" id="{{ .Post.ID }}">
-                <td class="ind"></td>
-                <td valign="top" class="votelinks">
-                  <center>
-                    <a id="up_{{ .Post.ID }}" href="/vote/{{ .Post.ID }}?how=up&amp;goto=/item/{{ .Post.ID }}">
-                      <div class="votearrow" title="upvote"></div>
-                    </a>
-                  </center>
-                </td>
-                <td class="default">
-                  <div style="margin-top:2px; margin-bottom:-10px;"><span class="comhead">
-                      <a href="user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
-                      <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
-                          {{ timeSince .Post.CreatedAt }} ago</a></span>
-                      <span id="unv_{{ .Post.ID }}"></span>
-                      <span class="par"> | <a href="/item/{{ .Post.ParentID }}">parent</a></span> |
-                      <a href="fave?id=28445648&amp;auth=69bee2512c41565ddf7e3bc95e003019e7a08830">favorite</a> <span
-                        class="storyon"> | on: <a href="/item/{{ .Post.MainPostID }}">{{ .Post.TitleSummary
-                          }}</a></span>
-                    </span></div><br>
-                  <div class="comment">
-                    <span class="commtext c00">{{ .Post.Title }}
-                      <div class="reply"></div>
-                    </span>
-                  </div>
-                </td>
-              </tr>
-              <tr style="height:10px"></tr>
-              <tr>
-                <td colspan="2"></td>
-                <td>
-                  <form method="post" action="/comment"><input type="hidden" name="parent" value="{{ .Post.ID }}"><input
-                      type="hidden" name="goto" value="{{ replyLink .Post.MainPostID .Post.ID}}"><input type="hidden"
-                      name="hmac" value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6"
-                      cols="60" autofocus="true"></textarea>
-                    <br><br><input type="submit" value="reply">
-                  </form>
-                </td>
-              </tr>
-            </tbody>
-            {{ end }}
-          </table>
-          <br /><br />
-          {{ $indentMap := .Indentation}}
-          {{ with .Posts }}
-          <table class="comment-tree" border="0">
-            <tbody>
-              {{ range . }}
-              {{ $newID := .ID }}
-              <tr id="{{ .ID }}" class="athing comtr">
-                <td>
-                  <table border="0">
-                    <tr>
-                      <td class="ind">
-                        <img src="/static/s.gif" width="{{ index $indentMap $newID }}" height="1" />
-                      </td>
-                      <td class="votelinks" valign="top">
-                        <center>
-                          <a id="up_{{ .ID }}" href="/vote/{{ .ID }}?how=up&amp;goto={{ replyLink .ParentID .ID }}">
-                            <div class="votearrow" title="upvote"></div>
-                          </a>
-                        </center>
-                      </td>
-                      <td class="default">
-                        <div style="margin-top: 2px; margin-bottom: -10px">
-                          <span class="comhead">
-                            <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
-                            <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">
-                                {{ timeSince .CreatedAt }} ago</a></span>
-                            <span id="unv_{{ .ID }}"></span><span class="par"></span>
-                            <a class="togg" n="25" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
-                            <span class="storyon"></span>
-                          </span>
-                        </div>
-                        <br />
-                        <div class="comment">
-                          <span class="commtext c00">
-                            {{ .Title }}
-                            <div class="reply">
-                              <p>
-                                <font size="1">
-                                  <u><a href="/reply/{{ .ID }}?goto={{ replyLink .ParentID .ID }}">reply</a></u>
-                                </font>
-                              </p>
-                            </div>
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
+  <center>
+    <table id="hnmain" width="85%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f6f6ef">
+      <tbody>
+
+        {{ template "navigation" .}}
+
+        {{ with . }}
+        <tr>
+          <td>
+            <table class="fatitem" border="0">
+              {{ if eq .Post.ParentID 0}}
+              <tbody>
+                <tr class="athing" id="{{ .Post.ID }}">
+                  <td class="title" valign="top" align="right">
+                    <span class="rank"></span>
+                  </td>
+                  <td class="votelinks" valign="top">
+                    <center>
+                      <a id="up_{{ .Post.ID }}" href="/vote/{{ .Post.ID }}?how=up&amp;goto=/item/{{ .Post.ID }}">
+                        <div class="votearrow" title="upvote"></div>
+                      </a>
+                    </center>
+                  </td>
+                  {{ if .Post.Link }}
+                  <td class="title">
+                    <a href="{{ .Post.Link }}" class="storylink"> {{ .Post.Title }} </a><span class="sitebit comhead">
+                      (<a href="/from/{{ .Post.Domain }}"><span class="sitestr">{{ .Post.Domain }}</span></a>)</span>
+                  </td>
+                  {{ else }}
+                  <td class="title">
+                    <a href="/item/{{ .Post.ID }}" class="storylink"> {{ .Post.Title }} </a>
+                  </td>
+                  {{ end }}
+                </tr>
+                <tr>
+                  <td colspan="2"></td>
+                  <td class="subtext">
+                    <span class="score" id="score_27903787">{{ .Post.Points }} points</span> by
+                    <a href="/user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
+                    <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
+                        {{ timeSince .Post.CreatedAt }} ago</a></span>
+                    <span id="unv_{{ .Post.ID }}"></span> |
+                    <a href="hide?id=27903787&amp;goto=item%3Fid%3D27903787">hide</a>
+                    |
+                    <a href="https://hn.algolia.com/?query=Fat%20Fritz%20is%20not%20the%20Only%20Ripoff%20and%20now%20ChessBase%20is%20Getting%20Sued&amp;type=story&amp;dateRange=all&amp;sort=byDate&amp;storyText=false&amp;prefix&amp;page=0"
+                      class="hnpast">past</a>
+                    |
+                    <a href="fave?id=27903787&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
+                    | <a href="/item/{{ .Post.ID }}">{{ len .Posts }}&nbsp;comments</a>
+                  </td>
+                </tr>
+                <tr style="height: 10px"></tr>
+                <tr>
+                  <td colspan="2"></td>
+                  <td>
+                    <form method="post" action="/comment">
+                      <input type="hidden" name="parent" value="{{ .Post.ID }}" /><input type="hidden" name="goto"
+                        value="/item/{{ .Post.ID }}" /><input type="hidden" name="hmac"
+                        value="d757c57e5f6caee959f03a08715ea0f508cee431" /><textarea name="text" rows="6"
+                        cols="60"></textarea>
+                      <br /><br /><input type="submit" value="add comment" />
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+              {{ else }}
+              <tbody>
+                <tr class="athing" id="{{ .Post.ID }}">
+                  <td class="ind"></td>
+                  <td valign="top" class="votelinks">
+                    <center>
+                      <a id="up_{{ .Post.ID }}" href="/vote/{{ .Post.ID }}?how=up&amp;goto=/item/{{ .Post.ID }}">
+                        <div class="votearrow" title="upvote"></div>
+                      </a>
+                    </center>
+                  </td>
+                  <td class="default">
+                    <div style="margin-top:2px; margin-bottom:-10px;"><span class="comhead">
+                        <a href="user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
+                        <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
+                            {{ timeSince .Post.CreatedAt }} ago</a></span>
+                        <span id="unv_{{ .Post.ID }}"></span>
+                        <span class="par"> | <a href="/item/{{ .Post.ParentID }}">parent</a></span> |
+                        <a href="fave?id=28445648&amp;auth=69bee2512c41565ddf7e3bc95e003019e7a08830">favorite</a> <span
+                          class="storyon"> | on: <a href="/item/{{ .Post.MainPostID }}">{{ .Post.TitleSummary
+                            }}</a></span>
+                      </span></div><br>
+                    <div class="comment">
+                      <span class="commtext c00">{{ .Post.Title }}
+                        <div class="reply"></div>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr style="height:10px"></tr>
+                <tr>
+                  <td colspan="2"></td>
+                  <td>
+                    <form method="post" action="/comment"><input type="hidden" name="parent"
+                        value="{{ .Post.ID }}"><input type="hidden" name="goto"
+                        value="{{ replyLink .Post.MainPostID .Post.ID}}"><input type="hidden" name="hmac"
+                        value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6" cols="60"
+                        autofocus="true"></textarea>
+                      <br><br><input type="submit" value="reply">
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
               {{ end }}
-            </tbody>
-          </table>
-          {{end}}
-          <br> <br>
+            </table>
+            <br /><br />
+            {{ $indentMap := .Indentation}}
+            {{ with .Posts }}
+            <table class="comment-tree" border="0">
+              <tbody>
+                {{ range . }}
+                {{ $newID := .ID }}
+                <tr id="{{ .ID }}" class="athing comtr">
+                  <td>
+                    <table border="0">
+                      <tr>
+                        <td class="ind">
+                          <img src="/static/s.gif" width="{{ index $indentMap $newID }}" height="1" />
+                        </td>
+                        <td class="votelinks" valign="top">
+                          <center>
+                            <a id="up_{{ .ID }}" href="/vote/{{ .ID }}?how=up&amp;goto={{ replyLink .ParentID .ID }}">
+                              <div class="votearrow" title="upvote"></div>
+                            </a>
+                          </center>
+                        </td>
+                        <td class="default">
+                          <div style="margin-top: 2px; margin-bottom: -10px">
+                            <span class="comhead">
+                              <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
+                              <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">
+                                  {{ timeSince .CreatedAt }} ago</a></span>
+                              <span id="unv_{{ .ID }}"></span><span class="par"></span>
+                              <a class="togg" n="25" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>
+                              <span class="storyon"></span>
+                            </span>
+                          </div>
+                          <br />
+                          <div class="comment">
+                            <span class="commtext c00">
+                              {{ .Title }}
+                              <div class="reply">
+                                <p>
+                                  <font size="1">
+                                    <u><a href="/reply/{{ .ID }}?goto={{ replyLink .ParentID .ID }}">reply</a></u>
+                                  </font>
+                                </p>
+                              </div>
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {{ end }}
+              </tbody>
+            </table>
+            {{end}}
+            <br> <br>
 
-        </td>
-      </tr>
-      {{ end }}
+          </td>
+        </tr>
+        {{ end }}
 
-      <tr>
-        <td>
-          <img src="/static/s.gif" width="0" height="10" />
-          <table width="100%" cellspacing="0" cellpadding="1">
-            <tbody>
-              <tr>
-                <td bgcolor="#ff6600"></td>
-              </tr>
-            </tbody>
-          </table>
-          <br />
-          <center>
-            <a href="https://www.ycombinator.com/apply/">
-              Applications are open for YC Winter 2022
-            </a>
-          </center>
-          <br />
-          <center>
-            <span class="yclinks"><a href="newsguidelines.html">Guidelines</a> |
-              <a href="newsfaq.html">FAQ</a> | <a href="lists">Lists</a> |
-              <a href="https://github.com/HackerNews/API">API</a> |
-              <a href="security.html">Security</a> |
-              <a href="http://www.ycombinator.com/legal/">Legal</a> |
-              <a href="http://www.ycombinator.com/apply/">Apply to YC</a> |
-              <a href="mailto:hn@ycombinator.com">Contact</a></span><br /><br />
-            <form method="get" action="//hn.algolia.com/">
-              Search:
-              <input type="text" name="q" value="" size="17" autocorrect="off" spellcheck="false" autocapitalize="none"
-                autocomplete="false" />
-            </form>
-          </center>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+        {{ template "footer" .}}
+
+      </tbody>
+    </table>
+  </center>
   <script type='text/javascript' src='/static/js/hn.js'></script>
 </body>
 
