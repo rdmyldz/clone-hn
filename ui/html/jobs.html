@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="/static/css/news.css">
+	<link rel="shortcut icon" href="/static/favicon.ico">
+	<title>Jobs | Hacker News</title>
+</head>
+
+<body>
+	<center>
+		<table id="hnmain" width="85%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f6f6ef">
+			<tbody>
+
+				{{ template "navigation" .}}
+
+				<tr>
+					<td>
+						<table class="itemlist" cellspacing="0" cellpadding="0" border="0">
+							<tbody>
+								<tr style="height:6px"></tr>
+								<tr>
+									<td></td>
+									<td><img src="/static/s.gif" width="14" height="1"></td>
+									<td>
+										These are jobs at YC startups. See more at
+										<a href="https://www.ycombinator.com/jobs"><u>ycombinator.com/jobs</u></a>.
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+
+				{{ template "footer" .}}
+			</tbody>
+		</table>
+	</center>
+	<script type='text/javascript' src='/static/js/hn.js'></script>
+</body>
+
+</html>

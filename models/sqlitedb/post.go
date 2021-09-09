@@ -2,13 +2,14 @@ package sqlitedb
 
 import (
 	"log"
-	"time"
 
 	"github.com/rdmyldz/clone-hn/models"
 )
 
 func (s *SqliteHN) CreatePost(p *models.Post) (int, error) {
-	stmt, err := s.db.Prepare(`INSERT INTO posts (link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	stmt, err := s.db.Prepare(`INSERT INTO posts (link, title, domain, owner, points, parent_id,
+		 main_post_id, comment_num, title_summary, created_at) 
+		 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return -1, err
 	}
@@ -23,7 +24,7 @@ func (s *SqliteHN) CreatePost(p *models.Post) (int, error) {
 		p.TitleSummary = ts
 	}
 
-	res, err := stmt.Exec(p.Link, p.Title, p.Domain, p.Owner, p.Points, p.ParentID, p.MainPostID, p.CommentNum, p.TitleSummary, time.Now())
+	res, err := stmt.Exec(p.Link, p.Title, p.Domain, p.Owner, p.Points, p.ParentID, p.MainPostID, p.CommentNum, p.TitleSummary, p.CreatedAt)
 	if err != nil {
 		return -1, err
 	}

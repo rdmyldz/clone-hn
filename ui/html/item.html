@@ -50,7 +50,7 @@
                   <td class="subtext">
                     <span class="score" id="score_27903787">{{ .Post.Points }} points</span> by
                     <a href="/user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
-                    <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
+                    <span class="age" title="{{ formatDatetime .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
                         {{ timeSince .Post.CreatedAt }} ago</a></span>
                     <span id="unv_{{ .Post.ID }}"></span> |
                     <a href="hide?id=27903787&amp;goto=item%3Fid%3D27903787">hide</a>
@@ -90,7 +90,7 @@
                   <td class="default">
                     <div style="margin-top:2px; margin-bottom:-10px;"><span class="comhead">
                         <a href="user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
-                        <span class="age" title="{{ .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
+                        <span class="age" title="{{ formatDatetime .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
                             {{ timeSince .Post.CreatedAt }} ago</a></span>
                         <span id="unv_{{ .Post.ID }}"></span>
                         <span class="par"> | <a href="/item/{{ .Post.ParentID }}">parent</a></span> |
@@ -146,7 +146,7 @@
                           <div style="margin-top: 2px; margin-bottom: -10px">
                             <span class="comhead">
                               <a href="/user/{{ .Owner }}" class="hnuser">{{ .Owner }}</a>
-                              <span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ .ID }}">
+                              <span class="age" title="{{ formatDatetime .CreatedAt }}"><a href="/item/{{ .ID }}">
                                   {{ timeSince .CreatedAt }} ago</a></span>
                               <span id="unv_{{ .ID }}"></span><span class="par"></span>
                               <a class="togg" href="javascript:void(0)" onclick="{{ jsToggle .ID }}">[–]</a>

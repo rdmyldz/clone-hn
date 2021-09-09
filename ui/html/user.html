@@ -19,11 +19,13 @@
 					<table border="0">
 						<tr class='athing'>
 							<td valign="top">user:</td>
-							<td timestamp="1531294365"><a href="/user/{{ .ID }}" class="hnuser">{{ .Username }}</a></td>
+							<td timestamp="{{ formatDatetime .CreatedAt }}"><a href="/user/{{ .ID }}" class="hnuser">
+									{{ .Username }}</a></td>
 						</tr>
 						<tr>
 							<td valign="top">created:</td>
-							<td><a href="front?day=2018-07-11&birth=philpem">{{ .CreatedAt }}</a></td>
+							<td><a href="/front?day={{ getDate .CreatedAt }}&birth={{ .Username }}">
+									{{ formatDatetime .CreatedAt }}</a></td>
 						</tr>
 						<tr>
 							<td valign="top">karma:</td>

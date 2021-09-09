@@ -23,6 +23,10 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/reply/{id}", authenticationMiddleware(app.handleReply)).Methods("GET")
 	router.HandleFunc("/vote/{id}", authenticationMiddleware(app.handleVote)).Methods("GET")
 	router.HandleFunc("/newcomments", app.handleNewComments).Methods("GET")
+	router.HandleFunc("/ask", app.handleAsk).Methods("GET")
+	router.HandleFunc("/show", app.handleShow).Methods("GET")
+	router.HandleFunc("/jobs", app.handleJobs).Methods("GET")
+	router.HandleFunc("/front", app.handleFront).Methods("GET")
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))
 
 	return router

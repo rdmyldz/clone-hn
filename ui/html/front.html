@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="stylesheet" href="/static/css/news.css">
 	<link rel="shortcut icon" href="/static/favicon.ico">
-	<title>Hacker News</title>
+	<title>{{ .FrontDates.titleDate }} front | Hacker News</title>
 </head>
 
 <body>
@@ -21,6 +21,39 @@
 					<td>
 						<table class="itemlist" cellspacing="0" cellpadding="0" border="0">
 							<tbody>
+								<tr style="height:6px"></tr>
+								<tr>
+									<td colspan="2"></td>
+									<td>Stories from {{ .FrontDates.storiesFrom }} (UTC)</td>
+								</tr>
+								<tr style="height:9px"></tr>
+								<tr>
+									<td colspan="2"></td>
+									<td>Go back a
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneDayAgo }}">day</a></span>,
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneMonthAgo }}">month</a></span>, or
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneYearAgo }}">year</a></span>.
+										{{ if .FrontDates.oneDayAfter }}
+										Go forward a
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneDayAfter }}">day</a></span>
+										{{ end }}
+										{{ if .FrontDates.oneMonthAfter }}
+										{{ if .FrontDates.oneYearAfter }}
+										,
+										{{ else }}
+										or
+										{{ end }}
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneMonthAfter }}">month</a></span>
+										{{ end }}
+
+										{{ if .FrontDates.oneYearAfter }}
+										or
+										<span class="hnmore"><a href="/front?day={{ .FrontDates.oneYearAfter }}">year</a></span>
+										{{ end }}
+										.
+									</td>
+								</tr>
+								<tr style="height:14px"></tr>
 								{{ range $i, $p := .Posts }}
 								<tr class="athing" id="{{ $p.ID }}">
 									<td class="title" valign="top" align="right">

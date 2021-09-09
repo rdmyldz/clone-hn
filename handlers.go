@@ -22,7 +22,12 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	query := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE parent_id = 0"
+	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+			comment_num, title_summary, created_at 
+			FROM posts 
+			WHERE parent_id = 0 AND 
+			title NOT LIKE "Ask HN:%" AND
+			title NOT LIKE "Show HN:%"`
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleHome, error while getting posts. err: %v\n", err)
@@ -47,7 +52,10 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts Where parent_id = 0 ORDER BY created_at DESC"
+	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+		comment_num, title_summary, created_at 
+		FROM posts 
+		Where parent_id = 0 ORDER BY created_at DESC`
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
@@ -162,7 +170,7 @@ func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
 		post.Title = text
 	}
 	post.Domain = getDomain(post.Link)
-	post.CreatedAt = time.Now()
+	post.CreatedAt = time.Now().UTC()
 	post.Owner = username
 
 	_, err = app.db.CreatePost(&post)
@@ -308,6 +316,7 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.Owner = username
+	p.CreatedAt = time.Now().UTC()
 	log.Printf("form values: %#v\n", r.Form)
 	log.Printf("comment: %#v\n", p)
 
@@ -361,7 +370,6 @@ func (app *application) handleUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
-	// postid:=28360987, commentid=28361157,
 	vars := mux.Vars(r)
 	log.Printf("vars: %v\n", vars)
 
@@ -374,7 +382,6 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	// TODO: add main_post_id's title &TmplData in order to pass to addcomment.html
 	log.Printf("comment: %#v\n", p)
 	data := &TmplData{
 		Post: p,
@@ -384,8 +391,6 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) handleVote(w http.ResponseWriter, r *http.Request) {
-	// redirectTo := r.FormValue("goto")
-	// log.Printf("redrectTo: %q\n", redirectTo)
 	vars := mux.Vars(r)
 	log.Printf("vars: %v\n", vars)
 
@@ -425,7 +430,10 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	query := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE parent_id != 0 ORDER BY created_at DESC"
+	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+			comment_num, title_summary, created_at 
+			FROM posts 
+			WHERE parent_id != 0 ORDER BY created_at DESC`
 	posts, err := app.db.GetPosts(query)
 	if err != nil {
 		log.Printf("in handleNewcomments, error while getting posts. err: %v\n", err)
@@ -440,4 +448,113 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Printf("error while executing newcomments.html: %v\n", err)
 	}
+}
+
+func (app *application) handleAsk(w http.ResponseWriter, r *http.Request) {
+	log.Println("in handleAsk")
+	uname, err := getUsername(w, r)
+	if err != nil {
+		log.Printf("error returned from getusername: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+			comment_num, title_summary, created_at 
+			FROM posts 
+			WHERE parent_id = 0 AND title LIKE "Ask HN:%"`
+	posts, err := app.db.GetPosts(query)
+	if err != nil {
+		log.Printf("in handleAsk, error while getting posts. err: %v\n", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	data := &TmplData{
+		Posts:    posts,
+		Username: uname,
+	}
+	app.tmpl.ExecuteTemplate(w, "ask.html", data)
+}
+
+func (app *application) handleShow(w http.ResponseWriter, r *http.Request) {
+	log.Println("in handleShow")
+	uname, err := getUsername(w, r)
+	if err != nil {
+		log.Printf("error returned from getusername: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+			comment_num, title_summary, created_at 
+			FROM posts 
+			WHERE parent_id = 0 AND title LIKE "Show HN:%"`
+	posts, err := app.db.GetPosts(query)
+	if err != nil {
+		log.Printf("in handleShow, error while getting posts. err: %v\n", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	data := &TmplData{
+		Posts:    posts,
+		Username: uname,
+	}
+	app.tmpl.ExecuteTemplate(w, "show.html", data)
+}
+
+func (app *application) handleJobs(w http.ResponseWriter, r *http.Request) {
+	log.Println("in handleJobs")
+	uname, err := getUsername(w, r)
+	if err != nil {
+		log.Printf("error returned from getusername: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	data := &TmplData{
+		Username: uname,
+	}
+	app.tmpl.ExecuteTemplate(w, "jobs.html", data)
+}
+
+func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
+	log.Println("in handleFront")
+	uname, err := getUsername(w, r)
+	if err != nil {
+		log.Printf("error returned from getusername: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	day := getDate(time.Now().UTC().AddDate(0, 0, -1))
+	val, ok := r.URL.Query()["day"]
+	if ok {
+		day = val[0]
+	}
+
+	dates, err := getDatesForFrontPage(day)
+	if err != nil {
+		log.Printf("in handleFront, error while getting dates: %v\n", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("in handleFront, day: %q\n", day)
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+		comment_num, title_summary, created_at
+		FROM posts
+		WHERE parent_id = 0 AND
+		%q >= date(created_at) AND
+		title NOT LIKE "Ask HN:%%" AND
+		title NOT LIKE "Show HN:%%"`, day)
+	posts, err := app.db.GetPosts(query)
+	if err != nil {
+		log.Printf("in handleFront, error while getting posts. err: %v\n", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	data := &TmplData{
+		Username:   uname,
+		Posts:      posts,
+		FrontDates: dates,
+	}
+	app.tmpl.ExecuteTemplate(w, "front.html", data)
 }

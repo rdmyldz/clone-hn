@@ -33,7 +33,7 @@
 									<div style="margin-top: 2px; margin-bottom: -10px">
 										<span class="comhead">
 											<a href="/user/{{ $p.Owner }}" class="hnuser">{{ $p.Owner }}</a>
-											<span class="age" title="2021-07-21T11:50:24"><a href="/item/{{ $p.ID }}">
+											<span class="age" title="{{ formatDatetime .CreatedAt }}"><a href="/item/{{ $p.ID }}">
 													{{ timeSince .CreatedAt }} ago</a></span>
 											<span id="unv_{{ $p.ID }}"></span>
 											<span class="par"> | <a href="/item/{{ $p.ParentID }}">parent</a></span>

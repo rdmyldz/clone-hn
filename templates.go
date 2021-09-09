@@ -16,18 +16,20 @@ type TmplData struct {
 	Username    string
 	User        *models.User
 	Indentation map[int]int
+	FrontDates  map[string]string
 }
 
 var tmplFunc = template.FuncMap{
-	"formatDate": formatDate,
-	"timeSince":  timeSince,
-	"replyLink":  replyLink,
-	"jsToggle":   jsToggle,
-	"incIndex":   incIndex,
+	"formatDatetime": formatDatetime,
+	"timeSince":      timeSince,
+	"replyLink":      replyLink,
+	"jsToggle":       jsToggle,
+	"incIndex":       incIndex,
+	"getDate":        getDate,
 }
 
-func formatDate(t time.Time) string {
-	return t.Format("02 Jun 2006 at 15:04")
+func formatDatetime(t time.Time) string {
+	return t.Format("2006-01-02T15:04:05")
 }
 
 func timeSince(t time.Time) string {
@@ -44,4 +46,41 @@ func jsToggle(cid int) template.JS {
 
 func incIndex(i int) int {
 	return i + 1
+}
+
+func getDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+func getDatesForFrontPage(str string) (map[string]string, error) {
+	dates := make(map[string]string)
+	dates["titleDate"] = str
+	tnow := time.Now().UTC()
+	t, err := time.Parse("2006-01-02", str)
+	if err != nil {
+		return nil, fmt.Errorf("error while parsing %s: %v", str, err)
+	}
+	dates["storiesFrom"] = t.Format("January 02, 2006")
+	dates["oneDayAgo"] = t.AddDate(0, 0, -1).Format("2006-01-02")
+	dates["oneMonthAgo"] = t.AddDate(0, -1, 0).Format("2006-01-02")
+	dates["oneYearAgo"] = t.AddDate(-1, 0, 0).Format("2006-01-02")
+
+	oneDayAfter := t.AddDate(0, 0, +1)
+	if oneDayAfter.After(tnow) {
+		return dates, nil
+	}
+	dates["oneDayAfter"] = oneDayAfter.Format("2006-01-02")
+
+	oneMonthAfter := t.AddDate(0, +1, 0)
+	if oneMonthAfter.After(tnow) {
+		return dates, nil
+	}
+	dates["oneMonthAfter"] = oneMonthAfter.Format("2006-01-02")
+
+	oneYearAfter := t.AddDate(+1, 0, 0)
+	if oneYearAfter.After(tnow) {
+		return dates, nil
+	}
+	dates["oneYearAfter"] = oneYearAfter.Format("2006-01-02")
+	return dates, nil
 }
