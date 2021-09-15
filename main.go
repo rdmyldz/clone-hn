@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
@@ -35,10 +40,31 @@ func main() {
 	app := &application{db: db, tmpl: tmpl}
 
 	srv := &http.Server{
-		Addr:    port,
-		Handler: app.routes(),
+		Addr:         port,
+		Handler:      app.routes(),
+		ReadTimeout:  1 * time.Second,
+		WriteTimeout: 3 * time.Second,
 	}
 
+	srvDone := make(chan os.Signal, 1)
+	signal.Notify(srvDone, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
 	log.Printf("started on %s", port)
-	log.Fatal(srv.ListenAndServe())
+
+	<-srvDone
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("error while shutting down:%v", err)
+	}
+
+	log.Print("shut down gracefully")
 }
