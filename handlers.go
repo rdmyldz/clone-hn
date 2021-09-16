@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +16,8 @@ import (
 	"github.com/rdmyldz/clone-hn/models"
 )
 
+const timeout = 500 * time.Millisecond
+
 func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 	log.Println("in handleHome")
 	uname, err := getUsername(w, r)
@@ -22,15 +26,22 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 			comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id = 0 AND 
 			title NOT LIKE "Ask HN:%" AND
 			title NOT LIKE "Show HN:%"`
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleHome, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -52,13 +63,19 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 		comment_num, title_summary, created_at 
 		FROM posts 
 		Where parent_id = 0 ORDER BY created_at DESC`
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -82,10 +99,17 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("id: %v\n", id)
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE post_id = ?"
-	p, err := app.db.GetPost(queryPost, id)
+	p, err := app.db.GetPost(ctx, queryPost, id)
 	if err != nil {
 		log.Printf("in handleItem, error while getting post. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -108,9 +132,12 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 
 SELECT * FROM temp_posts;
 	`, p.ID)
-	comments, err := app.db.GetPosts(query)
+	comments, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleItem, error while getting comments. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -173,9 +200,15 @@ func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
 	post.CreatedAt = time.Now().UTC()
 	post.Owner = username
 
-	_, err = app.db.CreatePost(&post)
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
+	_, err = app.db.CreatePost(ctx, &post)
 	if err != nil {
 		log.Printf("in handleR, error while creating post. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -188,10 +221,16 @@ func (app *application) handleFrom(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	site := vars["site"]
 
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts where domain = "%s"`, site)
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleFrom, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -216,6 +255,9 @@ func (app *application) handleLogin(w http.ResponseWriter, r *http.Request) {
 		_, err := app.db.InsertUser(username, password)
 		if err != nil {
 			log.Printf("in handleLogin, error while inserting user: %v\n", err)
+			if errors.Is(err, context.Canceled) {
+				return
+			}
 			http.Redirect(w, r, "/login", http.StatusPermanentRedirect)
 			return
 		}
@@ -227,6 +269,9 @@ func (app *application) handleLogin(w http.ResponseWriter, r *http.Request) {
 	uid, err := app.db.Authenticate(username, password)
 	if err != nil {
 		log.Printf("in handleLogin, error while authenticating the user: %s - %v\n", username, err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -320,16 +365,25 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 	log.Printf("form values: %#v\n", r.Form)
 	log.Printf("comment: %#v\n", p)
 
-	_, err = app.db.CreatePost(&p)
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
+	_, err = app.db.CreatePost(ctx, &p)
 	if err != nil {
 		log.Printf("in handleComment, error while inserting comment: %#v - %v\n", p, err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	err = app.db.UpdateCommentNum(p.MainPostID)
+	err = app.db.UpdateCommentNum(ctx, p.MainPostID)
 	if err != nil {
 		log.Printf("in handleComment, error while updating comment_num: %#v - %v\n", p, err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -363,6 +417,11 @@ func (app *application) handleUser(w http.ResponseWriter, r *http.Request) {
 	u, err := app.db.GetUser(query, username)
 	if err != nil {
 		log.Printf("in handleUser, error while getting user: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
 	log.Printf("%#v\n", u)
 	data := TmplData{User: u, Username: uname}
@@ -375,10 +434,17 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 
 	id := vars["id"]
 	log.Printf("id: %v\n", id)
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE post_id = ?"
-	p, err := app.db.GetPost(queryPost, id)
+	p, err := app.db.GetPost(ctx, queryPost, id)
 	if err != nil {
 		log.Printf("in handleReply, error while getting comment: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -402,9 +468,16 @@ func (app *application) handleVote(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("id: %v\n", id)
 	redirectTo := r.FormValue("goto")
-	err = app.db.UpdatePoints(id)
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
+	err = app.db.UpdatePoints(ctx, id)
 	if err != nil {
 		log.Printf("in handleVote, error while updating points: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -430,13 +503,20 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 			comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id != 0 ORDER BY created_at DESC`
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleNewcomments, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -458,13 +538,20 @@ func (app *application) handleAsk(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
 			comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id = 0 AND title LIKE "Ask HN:%"`
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleAsk, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -483,13 +570,20 @@ func (app *application) handleShow(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
 			comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id = 0 AND title LIKE "Show HN:%"`
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleShow, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -537,6 +631,10 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Printf("in handleFront, day: %q\n", day)
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+
 	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 		comment_num, title_summary, created_at
 		FROM posts
@@ -544,9 +642,12 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 		%q >= date(created_at) AND
 		title NOT LIKE "Ask HN:%%" AND
 		title NOT LIKE "Show HN:%%"`, day)
-	posts, err := app.db.GetPosts(query)
+	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleFront, error while getting posts. err: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
