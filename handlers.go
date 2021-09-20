@@ -545,13 +545,22 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleNewComments: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	log.Printf("offset: %d -- page: %d\n", offset, page)
+
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 			comment_num, title_summary, created_at 
 			FROM posts 
-			WHERE parent_id != 0 ORDER BY created_at DESC`
+			WHERE parent_id != 0 ORDER BY created_at DESC
+			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleNewcomments, error while getting posts. err: %v\n", err)
@@ -564,6 +573,7 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 	data := &TmplData{
 		Posts:    posts,
 		Username: uname,
+		Page:     page,
 	}
 	err = app.tmpl.ExecuteTemplate(w, "newcomments.html", data)
 	if err != nil {

@@ -15,6 +15,7 @@
 
 			{{ template "navigation" .}}
 
+			{{ $page:= .Page }}
 			<tr>
 				<td>
 					<table border="0" cellpadding="0" cellspacing="0" class="itemlist">
@@ -53,7 +54,11 @@
 							</tr>
 							<tr class="spacer" style="height:15px"></tr>
 							{{ end }}
-
+							<tr class="morespace" style="height:10px"></tr>
+							<tr>
+								<td colspan="2"></td>
+								<td class="title"><a href="/newcomments?p={{ $page }}" class="morelink" rel="next">More</a></td>
+							</tr>
 						</tbody>
 					</table>
 				</td>
