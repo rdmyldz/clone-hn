@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/rdmyldz/clone-hn/models"
@@ -143,12 +144,13 @@ SELECT * FROM temp_posts;
 	}
 
 	indentations := getDepth(comments, p.ID)
-
+	csrfToken := map[string]interface{}{csrf.TemplateTag: csrf.TemplateField(r)}
 	data := &TmplData{
 		Post:        p,
 		Posts:       comments,
 		Username:    uname,
 		Indentation: indentations,
+		CsrfToken:   csrfToken,
 	}
 
 	err = app.tmpl.ExecuteTemplate(w, "item.html", data)
@@ -178,7 +180,8 @@ func (app *application) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/submit", http.StatusSeeOther)
 		return
 	}
-	app.tmpl.ExecuteTemplate(w, "submit.html", nil)
+	csrfToken := map[string]interface{}{csrf.TemplateTag: csrf.TemplateField(r)}
+	app.tmpl.ExecuteTemplate(w, "submit.html", csrfToken)
 }
 
 func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
@@ -242,8 +245,9 @@ func (app *application) handleFrom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) handleLogin(w http.ResponseWriter, r *http.Request) {
+	csrfToken := map[string]interface{}{csrf.TemplateTag: csrf.TemplateField(r)}
 	if r.Method == "GET" {
-		app.tmpl.ExecuteTemplate(w, "login.html", nil)
+		app.tmpl.ExecuteTemplate(w, "login.html", csrfToken)
 		return
 	}
 
@@ -449,8 +453,10 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("comment: %#v\n", p)
+	csrfToken := map[string]interface{}{csrf.TemplateTag: csrf.TemplateField(r)}
 	data := &TmplData{
-		Post: p,
+		Post:      p,
+		CsrfToken: csrfToken,
 	}
 
 	app.tmpl.ExecuteTemplate(w, "addcomment.html", data)

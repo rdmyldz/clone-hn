@@ -17,6 +17,7 @@ type TmplData struct {
 	User        *models.User
 	Indentation map[int]int
 	FrontDates  map[string]string
+	CsrfToken   map[string]interface{}
 }
 
 var tmplFunc = template.FuncMap{

@@ -67,11 +67,13 @@
                   <td colspan="2"></td>
                   <td>
                     <form method="post" action="/comment">
-                      <input type="hidden" name="parent" value="{{ .Post.ID }}" /><input type="hidden" name="goto"
-                        value="/item/{{ .Post.ID }}" /><input type="hidden" name="hmac"
-                        value="d757c57e5f6caee959f03a08715ea0f508cee431" /><textarea name="text" rows="6"
-                        cols="60"></textarea>
-                      <br /><br /><input type="submit" value="add comment" />
+                      <input type="hidden" name="parent" value="{{ .Post.ID }}" />
+                      <input type="hidden" name="goto" value="/item/{{ .Post.ID }}" />
+                      {{ .CsrfToken.csrfField }}
+                      <input type="hidden" name="hmac" value="d757c57e5f6caee959f03a08715ea0f508cee431" />
+                      <textarea name="text" rows="6" cols="60"></textarea>
+                      <br /><br />
+                      <input type="submit" value="add comment" />
                     </form>
                   </td>
                 </tr>
@@ -109,11 +111,12 @@
                 <tr>
                   <td colspan="2"></td>
                   <td>
-                    <form method="post" action="/comment"><input type="hidden" name="parent"
-                        value="{{ .Post.ID }}"><input type="hidden" name="goto"
-                        value="{{ replyLink .Post.MainPostID .Post.ID}}"><input type="hidden" name="hmac"
-                        value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6" cols="60"
-                        autofocus="true"></textarea>
+                    <form method="post" action="/comment">
+                      <input type="hidden" name="parent" value="{{ .Post.ID }}">
+                      <input type="hidden" name="goto" value="{{ replyLink .Post.MainPostID .Post.ID}}">
+                      {{ .CsrfToken.csrfField }}
+                      <input type="hidden" name="hmac" value="abfc5f1394633fedf89f45740656de30c6585da4">
+                      <textarea name="text" rows="6" cols="60" autofocus="true"></textarea>
                       <br><br><input type="submit" value="reply">
                     </form>
                   </td>

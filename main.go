@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rdmyldz/clone-hn/models/sqlitedb"
@@ -38,10 +39,15 @@ func main() {
 	}
 
 	app := &application{db: db, tmpl: tmpl}
+	csrfMiddleware := csrf.Protect(
+		[]byte("very-secret-fornow"),
+		csrf.CookieName("token"),
+		csrf.FieldName("token"),
+	)
 
 	srv := &http.Server{
 		Addr:         port,
-		Handler:      app.routes(),
+		Handler:      csrfMiddleware(app.routes()),
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 3 * time.Second,
 	}

@@ -25,6 +25,7 @@
 			</tr>
 			<tr id="pagespace" title="Add Comment" style="height:10px"></tr>
 			<tr>
+				{{ $csrftoken := .CsrfToken.csrfField }}
 				{{ with .Post }}
 				<td>
 					<table class="fatitem" border="0">
@@ -58,10 +59,12 @@
 						<tr>
 							<td colspan="2"></td>
 							<td>
-								<form method="post" action="/comment"><input type="hidden" name="parent" value="{{ .ID }}"><input
-										type="hidden" name="goto" value="{{ replyLink .MainPostID .ID}}"><input type="hidden" name="hmac"
-										value="abfc5f1394633fedf89f45740656de30c6585da4"><textarea name="text" rows="6" cols="60"
-										autofocus="true"></textarea>
+								<form method="post" action="/comment">
+									<input type="hidden" name="parent" value="{{ .ID }}">
+									<input type="hidden" name="goto" value="{{ replyLink .MainPostID .ID}}">
+									{{ $csrftoken }}
+									<input type="hidden" name="hmac" value="abfc5f1394633fedf89f45740656de30c6585da4">
+									<textarea name="text" rows="6" cols="60" autofocus="true"></textarea>
 									<br><br><input type="submit" value="reply">
 								</form>
 							</td>
