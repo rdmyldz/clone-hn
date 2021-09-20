@@ -18,9 +18,27 @@ import (
 )
 
 const timeout = 500 * time.Millisecond
+const limit = 3
 
 func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
-	log.Println("in handleHome")
+	app.handleNews(w, r)
+}
+
+func pagination(r *http.Request) (int, int, error) {
+	page := strings.TrimSpace(r.URL.Query().Get("p"))
+	if page == "" {
+		page = "1"
+	}
+	p, err := strconv.Atoi(page)
+	if err != nil {
+		return -1, p, fmt.Errorf("error while converting %s : %w", page, err)
+	}
+	return (limit * (p - 1)), p + 1, nil
+
+}
+
+func (app *application) handleNews(w http.ResponseWriter, r *http.Request) {
+	log.Println("in handleNews")
 	uname, err := getUsername(w, r)
 	if err != nil {
 		log.Printf("error returned from getusername: %v\n", err)
@@ -28,18 +46,26 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleNews: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	log.Printf("offset: %d -- page: %d\n", offset, page)
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
-			comment_num, title_summary, created_at 
-			FROM posts 
-			WHERE parent_id = 0 AND 
-			title NOT LIKE "Ask HN:%" AND
-			title NOT LIKE "Show HN:%"`
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+			comment_num, title_summary, created_at
+			FROM posts
+			WHERE parent_id = 0 AND
+			title NOT LIKE "Ask HN:%%" AND
+			title NOT LIKE "Show HN:%%"
+			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleHome, error while getting posts. err: %v\n", err)
+		log.Printf("in handleNews, error while getting posts. err: %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -49,12 +75,9 @@ func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 	data := &TmplData{
 		Posts:    posts,
 		Username: uname,
+		Page:     page,
 	}
 	app.tmpl.ExecuteTemplate(w, "home.html", data)
-}
-
-func (app *application) handleNews(w http.ResponseWriter, r *http.Request) {
-	app.handleHome(w, r)
 }
 
 func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
@@ -64,13 +87,24 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleNews: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	log.Printf("offset: %d -- page: %d\n", offset, page)
+
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
 		comment_num, title_summary, created_at 
 		FROM posts 
-		Where parent_id = 0 ORDER BY created_at DESC`
+		Where parent_id = 0 ORDER BY created_at DESC
+		LIMIT %d OFFSET %d`,
+		limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
@@ -84,8 +118,9 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 	data := &TmplData{
 		Posts:    posts,
 		Username: uname,
+		Page:     page,
 	}
-	app.tmpl.ExecuteTemplate(w, "home.html", data)
+	app.tmpl.ExecuteTemplate(w, "newest.html", data)
 }
 
 func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
@@ -329,7 +364,7 @@ func getUsername(w http.ResponseWriter, r *http.Request) (string, error) {
 		clearSession(session, w, r)
 		return "", err
 	}
-	log.Printf("in getUsername, %#v\n", session.Values)
+
 	un, ok := session.Values["username"].(string)
 	if !ok {
 		log.Printf("in getUsername, un:%v - ok: %v\n", un, ok)
@@ -545,13 +580,22 @@ func (app *application) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleAsk: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	log.Printf("offset: %d -- page: %d\n", offset, page)
+
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
 			comment_num, title_summary, created_at 
 			FROM posts 
-			WHERE parent_id = 0 AND title LIKE "Ask HN:%"`
+			WHERE parent_id = 0 AND title LIKE "Ask HN:%%"
+			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleAsk, error while getting posts. err: %v\n", err)
@@ -564,6 +608,7 @@ func (app *application) handleAsk(w http.ResponseWriter, r *http.Request) {
 	data := &TmplData{
 		Posts:    posts,
 		Username: uname,
+		Page:     page,
 	}
 	app.tmpl.ExecuteTemplate(w, "ask.html", data)
 }
@@ -577,13 +622,22 @@ func (app *application) handleShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleShow: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	log.Printf("offset: %d -- page: %d\n", offset, page)
+
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
 			comment_num, title_summary, created_at 
 			FROM posts 
-			WHERE parent_id = 0 AND title LIKE "Show HN:%"`
+			WHERE parent_id = 0 AND title LIKE "Show HN:%%"
+			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleShow, error while getting posts. err: %v\n", err)
@@ -596,6 +650,7 @@ func (app *application) handleShow(w http.ResponseWriter, r *http.Request) {
 	data := &TmplData{
 		Posts:    posts,
 		Username: uname,
+		Page:     page,
 	}
 	app.tmpl.ExecuteTemplate(w, "show.html", data)
 }
@@ -623,6 +678,15 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	offset, page, err := pagination(r)
+	if err != nil {
+		log.Printf("in handleNews: %v\n", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	log.Printf("offset: %d -- page: %d\n", offset, page)
+
 	day := getDate(time.Now().UTC().AddDate(0, 0, -1))
 	val, ok := r.URL.Query()["day"]
 	if ok {
@@ -647,7 +711,9 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 		WHERE parent_id = 0 AND
 		%q >= date(created_at) AND
 		title NOT LIKE "Ask HN:%%" AND
-		title NOT LIKE "Show HN:%%"`, day)
+		title NOT LIKE "Show HN:%%"
+		ORDER BY created_at DESC
+		LIMIT %d OFFSET %d`, day, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
 		log.Printf("in handleFront, error while getting posts. err: %v\n", err)
@@ -662,6 +728,10 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 		Username:   uname,
 		Posts:      posts,
 		FrontDates: dates,
+		Page:       page,
 	}
-	app.tmpl.ExecuteTemplate(w, "front.html", data)
+	err = app.tmpl.ExecuteTemplate(w, "front.html", data)
+	if err != nil {
+		log.Printf("err while executing template: %v\n", err)
+	}
 }

@@ -20,11 +20,12 @@
 				<tr>
 					<td>
 						<table class="itemlist" cellspacing="0" cellpadding="0" border="0">
+							{{ $page:= .Page }}
 							<tbody>
 								{{ range $i, $p := .Posts }}
 								<tr class="athing" id="{{ $p.ID }}">
 									<td class="title" valign="top" align="right">
-										<span class="rank">{{ incIndex $i }}.</span>
+										<span class="rank">{{ incIndex $i $page }}.</span>
 									</td>
 									<td class="votelinks" valign="top">
 										<center>
@@ -58,9 +59,11 @@
 								</tr>
 								<tr class="spacer" style="height: 5px"></tr>
 								{{ end }}
-								<!--                    -->
-								<!--  -->
-								<tr class="spacer" style="height: 5px"></tr>
+								<tr class="morespace" style="height:10px"></tr>
+								<tr>
+									<td colspan="2"></td>
+									<td class="title"><a href="/news?p={{ $page }}" class="morelink" rel="next">More</a></td>
+								</tr>
 							</tbody>
 						</table>
 					</td>

@@ -18,6 +18,7 @@ type TmplData struct {
 	Indentation map[int]int
 	FrontDates  map[string]string
 	CsrfToken   map[string]interface{}
+	Page        int
 }
 
 var tmplFunc = template.FuncMap{
@@ -45,8 +46,8 @@ func jsToggle(cid int) template.JS {
 	return template.JS(fmt.Sprintf("return toggle(event, %d)", cid))
 }
 
-func incIndex(i int) int {
-	return i + 1
+func incIndex(i, p int) int {
+	return i + 1 + ((p - 2) * limit)
 }
 
 func getDate(t time.Time) string {

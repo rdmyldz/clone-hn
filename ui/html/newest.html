@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="stylesheet" href="/static/css/news.css">
 	<link rel="shortcut icon" href="/static/favicon.ico">
-	<title>Ask | Hacker News</title>
+	<title>Nes Links | Hacker News</title>
 </head>
 
 <body>
@@ -16,10 +16,11 @@
 			<tbody>
 
 				{{ template "navigation" .}}
-				{{ $page:= .Page }}
+
 				<tr>
 					<td>
 						<table class="itemlist" cellspacing="0" cellpadding="0" border="0">
+							{{ $page:= .Page }}
 							<tbody>
 								{{ range $i, $p := .Posts }}
 								<tr class="athing" id="{{ $p.ID }}">
@@ -61,7 +62,7 @@
 								<tr class="morespace" style="height:10px"></tr>
 								<tr>
 									<td colspan="2"></td>
-									<td class="title"><a href="/ask?p={{ $page }}" class="morelink" rel="next">More</a></td>
+									<td class="title"><a href="/newest?p={{ $page }}" class="morelink" rel="next">More</a></td>
 								</tr>
 							</tbody>
 						</table>
