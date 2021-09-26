@@ -36,12 +36,12 @@
 									</td>
 									{{ if $p.Link }}
 									<td class="title">
-										<a href="{{ $p.Link}}" class="storylink">{{ $p.Title }}</a><span class="sitebit comhead">
+										<a href="{{ $p.Link}}" class="storylink">{{ htmlString $p.Title }}</a><span class="sitebit comhead">
 											(<a href="/from/{{ $p.Domain }}"><span class="sitestr">{{ $p.Domain }}</span></a>)</span>
 									</td>
 									{{ else }}
 									<td class="title">
-										<a href="/item/{{ $p.ID }}" class="storylink">{{ $p.Title }}</a>
+										<a href="/item/{{ $p.ID }}" class="storylink">{{ htmlString $p.Title }}</a>
 									</td>
 									{{ end }}
 								</tr>

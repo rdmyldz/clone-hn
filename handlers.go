@@ -18,7 +18,7 @@ import (
 )
 
 const timeout = 500 * time.Millisecond
-const limit = 3
+const limit = 30
 
 func (app *application) handleHome(w http.ResponseWriter, r *http.Request) {
 	app.handleNews(w, r)

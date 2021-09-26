@@ -36,12 +36,13 @@
                   </td>
                   {{ if .Post.Link }}
                   <td class="title">
-                    <a href="{{ .Post.Link }}" class="storylink"> {{ .Post.Title }} </a><span class="sitebit comhead">
+                    <a href="{{ .Post.Link }}" class="storylink"> {{ htmlString .Post.Title }} </a><span
+                      class="sitebit comhead">
                       (<a href="/from/{{ .Post.Domain }}"><span class="sitestr">{{ .Post.Domain }}</span></a>)</span>
                   </td>
                   {{ else }}
                   <td class="title">
-                    <a href="/item/{{ .Post.ID }}" class="storylink"> {{ .Post.Title }} </a>
+                    <a href="/item/{{ .Post.ID }}" class="storylink"> {{ htmlString .Post.Title }} </a>
                   </td>
                   {{ end }}
                 </tr>
@@ -101,7 +102,7 @@
                             }}</a></span>
                       </span></div><br>
                     <div class="comment">
-                      <span class="commtext c00">{{ .Post.Title }}
+                      <span class="commtext c00">{{ htmlString .Post.Title }}
                         <div class="reply"></div>
                       </span>
                     </div>
@@ -159,7 +160,7 @@
                           <br />
                           <div class="comment">
                             <span class="commtext c00">
-                              {{ .Title }}
+                              {{ htmlString .Title }}
                               <div class="reply">
                                 <p>
                                   <font size="1">

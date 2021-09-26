@@ -28,6 +28,11 @@ var tmplFunc = template.FuncMap{
 	"jsToggle":       jsToggle,
 	"incIndex":       incIndex,
 	"getDate":        getDate,
+	"htmlString":     htmlString,
+}
+
+func htmlString(text string) template.HTML {
+	return template.HTML(text)
 }
 
 func formatDatetime(t time.Time) string {
