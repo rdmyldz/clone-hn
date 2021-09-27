@@ -14,15 +14,7 @@ type Post struct {
 	MainPostID   int
 	CommentNum   int
 	TitleSummary string
-}
-
-type Comment struct {
-	ID        int
-	Text      string
-	CreatedAt time.Time
-	Owner     string
-	ParentID  int
-	PostID    int
+	Text         string
 }
 
 type User struct {

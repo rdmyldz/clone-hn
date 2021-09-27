@@ -56,8 +56,8 @@ func (app *application) handleNews(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
-			comment_num, title_summary, created_at
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id,
+			main_post_id, text, comment_num, title_summary, created_at
 			FROM posts
 			WHERE parent_id = 0 AND
 			title NOT LIKE "Ask HN:%%" AND
@@ -65,7 +65,7 @@ func (app *application) handleNews(w http.ResponseWriter, r *http.Request) {
 			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleNews, error while getting posts. err: %v\n", err)
+		log.Printf("in handleNews, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -99,15 +99,15 @@ func (app *application) handleNewest(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
-		comment_num, title_summary, created_at 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, 
+		main_post_id, text, comment_num, title_summary, created_at 
 		FROM posts 
 		Where parent_id = 0 ORDER BY created_at DESC
 		LIMIT %d OFFSET %d`,
 		limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleNewest, error while getting posts. err: %v\n", err)
+		log.Printf("in handleNewest, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -139,10 +139,13 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE post_id = ?"
+	queryPost := `SELECT post_id, link, title, domain, owner, points, parent_id, 
+		main_post_id, text, comment_num, title_summary, created_at 
+		FROM posts 
+		WHERE post_id = ?`
 	p, err := app.db.GetPost(ctx, queryPost, id)
 	if err != nil {
-		log.Printf("in handleItem, error while getting post. err: %v\n", err)
+		log.Printf("in handleItem, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -154,23 +157,27 @@ func (app *application) handleItem(w http.ResponseWriter, r *http.Request) {
 	// SELECT * FROM posts WHERE parent_id = 1 OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = 1);
 	// query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, created_at FROM posts where parent_id = "%d" OR parent_id IN (SELECT post_id FROM posts WHERE parent_id = "%d")`, p.ID, p.ID)
 	query := fmt.Sprintf(`
-	WITH RECURSIVE temp_posts (post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at) AS (
-    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.main_post_id, p.comment_num, p.title_summary, p.created_at
-    FROM posts AS p
-    WHERE p.parent_id = %d
+		WITH RECURSIVE 
+		temp_posts (post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+		text, comment_num, title_summary, created_at) 
+		AS ( SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, 
+			p.main_post_id, p.text, p.comment_num, p.title_summary, p.created_at
+    		FROM posts AS p
+    		WHERE p.parent_id = %d
+    		UNION ALL
+    		SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, 
+		    p.main_post_id, p.text, p.comment_num, p.title_summary, p.created_at
+    		FROM posts AS p
+    		JOIN temp_posts tp ON tp.post_id = p.parent_id ORDER BY p.parent_id DESC, 
+		    p.created_at DESC
+		)
 
-    UNION ALL
-
-    SELECT p.post_id, p.link, p.title, p.domain, p.owner, p.points, p.parent_id, p.main_post_id, p.comment_num, p.title_summary, p.created_at
-    FROM posts AS p
-    JOIN temp_posts tp ON tp.post_id = p.parent_id ORDER BY p.parent_id DESC, p.created_at DESC
-)
-
-SELECT * FROM temp_posts;
+		SELECT * FROM temp_posts;
 	`, p.ID)
+	// getting comments
 	comments, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleItem, error while getting comments. err: %v\n", err)
+		log.Printf("in handleItem, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -230,10 +237,7 @@ func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
 	var post models.Post
 	post.Title = r.PostFormValue("title")
 	post.Link = r.PostFormValue("url")
-	text := r.PostFormValue("text")
-	if text != "" {
-		post.Title = text
-	}
+	post.Text = r.PostFormValue("text")
 	post.Domain = getDomain(post.Link)
 	post.CreatedAt = time.Now().UTC()
 	post.Owner = username
@@ -243,7 +247,7 @@ func (app *application) handleR(w http.ResponseWriter, r *http.Request) {
 
 	_, err = app.db.CreatePost(ctx, &post)
 	if err != nil {
-		log.Printf("in handleR, error while creating post. err: %v\n", err)
+		log.Printf("in handleR, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -262,10 +266,11 @@ func (app *application) handleFrom(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts where domain = "%s"`, site)
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id,  
+	main_post_id, text, comment_num, title_summary, created_at FROM posts where domain = "%s"`, site)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleFrom, error while getting posts. err: %v\n", err)
+		log.Printf("in handleFrom, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -307,7 +312,7 @@ func (app *application) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	uid, err := app.db.Authenticate(username, password)
 	if err != nil {
-		log.Printf("in handleLogin, error while authenticating the user: %s - %v\n", username, err)
+		log.Printf("in handleLogin, user: %s - %v\n", username, err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -384,7 +389,7 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 
 	var p models.Post
 	redirectTo := r.FormValue("goto")
-	p.Title = r.FormValue("text")
+	p.Text = r.FormValue("text")
 	parent := r.FormValue("parent")
 	pid, err := strconv.Atoi(parent)
 	if err != nil {
@@ -401,15 +406,13 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 	}
 	p.Owner = username
 	p.CreatedAt = time.Now().UTC()
-	log.Printf("form values: %#v\n", r.Form)
-	log.Printf("comment: %#v\n", p)
 
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
 	_, err = app.db.CreatePost(ctx, &p)
 	if err != nil {
-		log.Printf("in handleComment, error while inserting comment: %#v - %v\n", p, err)
+		log.Printf("in handleComment, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -419,7 +422,7 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 
 	err = app.db.UpdateCommentNum(ctx, p.MainPostID)
 	if err != nil {
-		log.Printf("in handleComment, error while updating comment_num: %#v - %v\n", p, err)
+		log.Printf("in handleComment, id: %v - %v\n", p.MainPostID, err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -427,7 +430,6 @@ func (app *application) handleComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("after update - comment: %#v\n", p)
 	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
 }
 
@@ -477,10 +479,11 @@ func (app *application) handleReply(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	queryPost := "SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, comment_num, title_summary, created_at FROM posts WHERE post_id = ?"
+	queryPost := `SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
+		text, comment_num, title_summary, created_at FROM posts WHERE post_id = ?`
 	p, err := app.db.GetPost(ctx, queryPost, id)
 	if err != nil {
-		log.Printf("in handleReply, error while getting comment: %v\n", err)
+		log.Printf("in handleReply, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -556,14 +559,14 @@ func (app *application) handleNewComments(w http.ResponseWriter, r *http.Request
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
-			comment_num, title_summary, created_at 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, 
+			main_post_id, text, comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id != 0 ORDER BY created_at DESC
 			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleNewcomments, error while getting posts. err: %v\n", err)
+		log.Printf("in handleNewcomments, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -601,14 +604,14 @@ func (app *application) handleAsk(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
-			comment_num, title_summary, created_at 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, 
+			main_post_id, text, comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id = 0 AND title LIKE "Ask HN:%%"
 			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleAsk, error while getting posts. err: %v\n", err)
+		log.Printf("in handleAsk, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -643,14 +646,14 @@ func (app *application) handleShow(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id, 
-			comment_num, title_summary, created_at 
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, 
+			main_post_id, text, comment_num, title_summary, created_at 
 			FROM posts 
 			WHERE parent_id = 0 AND title LIKE "Show HN:%%"
 			LIMIT %d OFFSET %d`, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleShow, error while getting posts. err: %v\n", err)
+		log.Printf("in handleShow, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
@@ -715,8 +718,8 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, main_post_id,
-		comment_num, title_summary, created_at
+	query := fmt.Sprintf(`SELECT post_id, link, title, domain, owner, points, parent_id, 
+		main_post_id, text, comment_num, title_summary, created_at
 		FROM posts
 		WHERE parent_id = 0 AND
 		%q >= date(created_at) AND
@@ -726,7 +729,7 @@ func (app *application) handleFront(w http.ResponseWriter, r *http.Request) {
 		LIMIT %d OFFSET %d`, day, limit, offset)
 	posts, err := app.db.GetPosts(ctx, query)
 	if err != nil {
-		log.Printf("in handleFront, error while getting posts. err: %v\n", err)
+		log.Printf("in handleFront, %v\n", err)
 		if errors.Is(err, context.Canceled) {
 			return
 		}

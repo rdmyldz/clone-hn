@@ -49,20 +49,27 @@
                 <tr>
                   <td colspan="2"></td>
                   <td class="subtext">
-                    <span class="score" id="score_27903787">{{ .Post.Points }} points</span> by
+                    <span class="score" id="score_{{ .Post.ID }}">{{ .Post.Points }} points</span> by
                     <a href="/user/{{ .Post.Owner }}" class="hnuser">{{ .Post.Owner }}</a>
                     <span class="age" title="{{ formatDatetime .Post.CreatedAt }}"><a href="/item/{{ .Post.ID }}">
                         {{ timeSince .Post.CreatedAt }} ago</a></span>
                     <span id="unv_{{ .Post.ID }}"></span> |
-                    <a href="hide?id=27903787&amp;goto=item%3Fid%3D27903787">hide</a>
+                    <a href="/hide/{{ .Post.ID }}&amp;goto=/item/{{ .Post.ID }}">hide</a>
                     |
                     <a href="https://hn.algolia.com/?query=Fat%20Fritz%20is%20not%20the%20Only%20Ripoff%20and%20now%20ChessBase%20is%20Getting%20Sued&amp;type=story&amp;dateRange=all&amp;sort=byDate&amp;storyText=false&amp;prefix&amp;page=0"
                       class="hnpast">past</a>
                     |
-                    <a href="fave?id=27903787&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
+                    <a href="/fave?id={{ .Post.ID }}&amp;auth=e4e2f766d02329d3881317713e492e42b4751a7d">favorite</a>
                     | <a href="/item/{{ .Post.ID }}">{{ len .Posts }}&nbsp;comments</a>
                   </td>
                 </tr>
+                {{ if .Post.Text }}
+                <tr style="height:2px"></tr>
+                <tr>
+                  <td colspan="2"></td>
+                  <td>{{ .Post.Text }}</td>
+                </tr>
+                {{ end }}
                 <tr style="height: 10px"></tr>
                 <tr>
                   <td colspan="2"></td>
@@ -99,10 +106,10 @@
                         <span class="par"> | <a href="/item/{{ .Post.ParentID }}">parent</a></span> |
                         <a href="fave?id=28445648&amp;auth=69bee2512c41565ddf7e3bc95e003019e7a08830">favorite</a> <span
                           class="storyon"> | on: <a href="/item/{{ .Post.MainPostID }}">{{ .Post.TitleSummary
-                            }}</a></span>
+                            }}...</a></span>
                       </span></div><br>
                     <div class="comment">
-                      <span class="commtext c00">{{ htmlString .Post.Title }}
+                      <span class="commtext c00">{{ htmlString .Post.Text }}
                         <div class="reply"></div>
                       </span>
                     </div>
@@ -160,7 +167,7 @@
                           <br />
                           <div class="comment">
                             <span class="commtext c00">
-                              {{ htmlString .Title }}
+                              {{ htmlString .Text }}
                               <div class="reply">
                                 <p>
                                   <font size="1">

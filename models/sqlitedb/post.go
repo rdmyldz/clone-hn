@@ -8,9 +8,10 @@ import (
 )
 
 func (s *SqliteHN) CreatePost(ctx context.Context, p *models.Post) (int, error) {
-	stmt, err := s.db.PrepareContext(ctx, `INSERT INTO posts (link, title, domain, owner, points, parent_id,
-		 main_post_id, comment_num, title_summary, created_at) 
-		 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	stmt, err := s.db.PrepareContext(ctx, `INSERT INTO posts (link, title, domain, owner,
+		points, parent_id, text,
+		main_post_id, comment_num, title_summary, created_at) 
+		values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return -1, fmt.Errorf("in CreatePost, error while preparing statement: %w", err)
 	}
@@ -24,7 +25,8 @@ func (s *SqliteHN) CreatePost(ctx context.Context, p *models.Post) (int, error) 
 		p.TitleSummary = ts
 	}
 
-	res, err := stmt.ExecContext(ctx, p.Link, p.Title, p.Domain, p.Owner, p.Points, p.ParentID, p.MainPostID, p.CommentNum, p.TitleSummary, p.CreatedAt)
+	res, err := stmt.ExecContext(ctx, p.Link, p.Title, p.Domain, p.Owner, p.Points, p.ParentID,
+		p.Text, p.MainPostID, p.CommentNum, p.TitleSummary, p.CreatedAt)
 	if err != nil {
 		return -1, fmt.Errorf("in CreatePost, error while executing statement: %w", err)
 	}
@@ -36,7 +38,7 @@ func (s *SqliteHN) CreatePost(ctx context.Context, p *models.Post) (int, error) 
 }
 
 func (s *SqliteHN) GetTitleSum(ctx context.Context, id int) (string, error) {
-	row := s.db.QueryRowContext(ctx, "SELECT substr(title,1,25) FROM posts WHERE post_id = ?", id)
+	row := s.db.QueryRowContext(ctx, "SELECT substr(title,1,52) FROM posts WHERE post_id = ?", id)
 	var ts string
 	err := row.Scan(&ts)
 	if err != nil {
@@ -95,7 +97,8 @@ func (s *SqliteHN) GetPosts(ctx context.Context, query string) ([]models.Post, e
 	var ret []models.Post
 	for rows.Next() {
 		var p models.Post
-		err := rows.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID, &p.MainPostID, &p.CommentNum, &p.TitleSummary, &p.CreatedAt)
+		err := rows.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID,
+			&p.MainPostID, &p.Text, &p.CommentNum, &p.TitleSummary, &p.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("in GetPosts, error while scaning row: %w", err)
 		}
@@ -110,7 +113,8 @@ func (s *SqliteHN) GetPosts(ctx context.Context, query string) ([]models.Post, e
 func (s *SqliteHN) GetPost(ctx context.Context, query, id string) (*models.Post, error) {
 	row := s.db.QueryRowContext(ctx, query, id)
 	var p models.Post
-	err := row.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID, &p.MainPostID, &p.CommentNum, &p.TitleSummary, &p.CreatedAt)
+	err := row.Scan(&p.ID, &p.Link, &p.Title, &p.Domain, &p.Owner, &p.Points, &p.ParentID,
+		&p.MainPostID, &p.Text, &p.CommentNum, &p.TitleSummary, &p.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("in GetPost, error while querying row: %w", err)
 	}

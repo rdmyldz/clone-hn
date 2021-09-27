@@ -11,8 +11,6 @@ import (
 type TmplData struct {
 	Post        *models.Post
 	Posts       []models.Post
-	Comments    []models.Comment
-	Comment     *models.Comment
 	Username    string
 	User        *models.User
 	Indentation map[int]int

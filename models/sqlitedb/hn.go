@@ -2,6 +2,7 @@ package sqlitedb
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3" // sql behavior modified
 )
@@ -13,7 +14,7 @@ type SqliteHN struct {
 func NewDB(dbFile string) (*SqliteHN, error) {
 	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in NewDB, error while opening db: %w", err)
 	}
 	defer func() {
 		if err != nil {
@@ -32,19 +33,10 @@ func NewDB(dbFile string) (*SqliteHN, error) {
 			"main_post_id" INTEGER NOT NULL,
 			"comment_num" INTEGER NOT NULL,
 			"title_summary" TEXT NOT NULL,
-			"created_at" DATETIME NOT NULL
+			"created_at" DATETIME NOT NULL,
+			"text" TEXT NOT NULL
 			);
 
-		CREATE TABLE IF NOT EXISTS comments ( 
-			"comment_id" INTEGER PRIMARY KEY AUTOINCREMENT, 
-			"text" TEXT NOT NULL, 
-			"created_at" DATETIME NOT NULL,
-			"owner" TEXT NOT NULL,
-			"parent_id" int NOT NULL,
-			"post_id" INTEGER NOT NULL,
-			FOREIGN KEY ("post_id") REFERENCES "posts" ("post_id")
-			);
-		
 		CREATE TABLE IF NOT EXISTS users ( 
 			"user_id" INTEGER PRIMARY KEY AUTOINCREMENT, 
 			"user_name" TEXT NOT NULL UNIQUE, 
@@ -53,6 +45,9 @@ func NewDB(dbFile string) (*SqliteHN, error) {
 			);
 		
 	`)
+	if err != nil {
+		return nil, fmt.Errorf("in NewDB, error while creating tables: %w", err)
+	}
 
-	return &SqliteHN{db: db}, err
+	return &SqliteHN{db: db}, nil
 }
